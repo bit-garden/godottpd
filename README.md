@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> This needs a new maintainer, as I'm not using it anymore currently and can't continue to support it. Please se https://github.com/deep-entertainment/issues/issues/56 for details
+> I am taking over as new maintainer as of 7/7/2025. Please see https://github.com/deep-entertainment/issues/issues/56 for details.
 
 # GodotTPD
 
@@ -11,7 +11,7 @@ This addon for the [Godot engine](https://godotengine.com) includes classes to s
 
 Create a router class that extends [HttpRouter](HttpRouter.md). Overwrite the methods that handle the required HTTP methods required for the specific path:
 
-```python
+```gdscript
 extends HttpRouter
 class_name MyExampleRouter
 
@@ -25,7 +25,7 @@ This router would respond to a GET [request](HttpRequest.md) on its path and sen
 
 Afterwards, create a new [HttpServer](HttpServer.md), add the router and start the server. This needs to be called from a node in the SceneTree.
 
-```python
+```gdscript
 var server = HttpServer.new()
 server.register_router("/", MyExampleRouter.new())
 add_child(server)
@@ -42,6 +42,3 @@ Further information can be found in the API documentation:
 - [HttpServer](docs/api/HttpServer.md)
 - [HttpFileRouter](docs/api/HttpFileRouter.md)
 
-## Issues and feature requests
-
-Please check out the [deep entertainment issue repository](https://github.com/deep-entertainment/issues/issues) if you find bugs or have ideas for new features.
