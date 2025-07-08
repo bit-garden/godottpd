@@ -28,11 +28,11 @@ var access_control_allowed_methods = "POST, GET, OPTIONS"
 var access_control_allowed_headers = "content-type"
 
 ## Send out a raw (Bytes) response to the client
-## [br] Useful to send files faster or raw data which will be converted by the client
+## [br]Useful to send files faster or raw data which will be converted by the client
 ## [br][param status] - The HTTP Status code to send
 ## [br][param data] - The body data to send
 ## [br][param content_type] - The type of content to send.
-func send_raw(status_code: int, data: PackedByteArray = PackedByteArray([]), content_type: String = "application/octet-stream") -> void:
+func send_raw(status_code: int, data: PackedByteArray = PackedByteArray([]), content_type: String = "application/octet-stream", extra_header: String = "") -> void:
 	client.put_data(("HTTP/1.1 %d %s\r\n" % [status_code, _match_status_code(status_code)]).to_ascii_buffer())
 	client.put_data(("Server: %s\r\n" % server_identifier).to_ascii_buffer())
 	for header in headers.keys():
@@ -44,7 +44,16 @@ func send_raw(status_code: int, data: PackedByteArray = PackedByteArray([]), con
 	client.put_data(("Access-Control-Allow-Origin: %s\r\n" % access_control_origin).to_ascii_buffer())
 	client.put_data(("Access-Control-Allow-Methods: %s\r\n" % access_control_allowed_methods).to_ascii_buffer())
 	client.put_data(("Access-Control-Allow-Headers: %s\r\n" % access_control_allowed_headers).to_ascii_buffer())
+	client.put_data("Accept-Ranges: bytes\r\n".to_ascii_buffer())
+	client.put_data(extra_header.to_ascii_buffer())
 	client.put_data(("Content-Type: %s\r\n\r\n" % content_type).to_ascii_buffer())
+	
+	client.put_data(data)
+	
+## For sending parts of data
+## [br]TODO: http_file_router.gd - use this to send small parts of large files at a time to avoid smashing the ram of the server
+## [br]TODO: This will probably be used for range header?
+func send_partial(status_code: int, data: PackedByteArray = PackedByteArray([]), content_type: String = "application/octet-stream", extra_header: String = "") -> void:
 	client.put_data(data)
 
 ## Send out a response to the client

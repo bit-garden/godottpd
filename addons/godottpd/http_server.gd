@@ -65,7 +65,7 @@ func _init(_logging: bool = false):
 func _print_debug(message: String) -> void:
 	var time = Time.get_datetime_dict_from_system()
 	var time_return = "%02d-%02d-%02d %02d:%02d:%02d" % [time.year, time.month, time.day, time.hour, time.minute, time.second]
-	print_debug("[SERVER] ",time_return," >> ", message)
+	print("[SERVER] ",time_return," >> ", message)
 
 ## Register a new router to handle a specific path
 ## [br]
@@ -176,6 +176,10 @@ func _handle_request(client: StreamPeer, request_string: String):
 #   - headers: A dictionary of headers of the request
 #   - body: The raw body of the request
 func _perform_current_request(client: StreamPeer, request: HttpRequest):
+	var thread = Thread.new()
+	thread.start(__perform_current_request.bind(client, request))
+
+func __perform_current_request(client: StreamPeer, request: HttpRequest):
 	_print_debug("HTTP Request: " + str(request))
 	var found = false
 	var is_allowed_origin = false

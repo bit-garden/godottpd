@@ -20,6 +20,9 @@ var extensions: PackedStringArray = ["html"]
 ## A list of extensions that will be excluded if requested
 var exclude_extensions: PackedStringArray = []
 
+var weekdays: Array[String] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+var monthnames: Array[String] = ['___', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 ## Creates an HttpFileRouter intance
 ## [br]
 ## [br][param path] - Full path to the folder which will be exposed to web.
@@ -49,7 +52,7 @@ func _init(
 func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 	var serving_path: String = path + request.path
 	var file_exists: bool = _file_exists(serving_path)
-
+	
 	if request.path == "/" and not file_exists:
 		if index_page.length() > 0:
 			serving_path = path + "/" + index_page
@@ -64,11 +67,37 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 
 	# GDScript must be excluded, unless it is used as a preprocessor (php-like)
 	if (file_exists and not serving_path.get_extension() in ["gd"] + Array(exclude_extensions)):
-		response.send_raw(
-			200,
-			_serve_file(serving_path),
-			_get_mime(serving_path.get_extension())
-			)
+		var modifiedtime = FileAccess.get_modified_time(serving_path)
+		var time = Time.get_datetime_dict_from_unix_time(modifiedtime)
+		var weekday = weekdays[time.weekday]
+		var monthname = monthnames[time.month]
+		var timestamp = '%s, %02d %s %04d %02d:%02d:%02d GMT' % [weekday, time.day, monthname, time.year, time.hour, time.minute, time.second]
+		
+		if request.headers.get('If-Modified-Since') == timestamp:
+			response.send_raw(304, ''.to_ascii_buffer(), _get_mime(serving_path.get_extension()))
+		else:
+			if request.headers.has('Range'):
+				var rdata: PackedStringArray = request.headers['Range'].split('=')
+				var brequest: PackedStringArray = rdata[1].split('-')
+				if brequest[0].is_valid_int():
+					var start: int = brequest[0].to_int()
+					var file: FileAccess = FileAccess.open(serving_path, FileAccess.READ)
+					var size = file.get_length()
+					file.close()
+					print('sending partial')
+					response.send_raw(
+						206,
+						_serve_file(serving_path, start),
+						_get_mime(serving_path.get_extension()),
+						"Cache-Control: no-cache\r\nLast-Modified: %s\r\nContent-Range: bytes %s-%s/%s\n\r" % [timestamp, start, size-1, size]
+					)
+			else:
+				response.send_raw(
+					200,
+					_serve_file(serving_path),
+					_get_mime(serving_path.get_extension()),
+					"Cache-Control: no-cache\r\nLast-Modified: %s\r\n" % timestamp
+				)
 	else:
 		if fallback_page.length() > 0:
 			serving_path = path + "/" + fallback_page
@@ -80,13 +109,15 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 #
 # #### Parameters
 # - file_path: Full path to the file
-func _serve_file(file_path: String) -> PackedByteArray:
+func _serve_file(file_path: String, seek: int = -1) -> PackedByteArray:
 	var content: PackedByteArray = []
 	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
 	var error = file.get_open_error()
 	if error:
 		content = ("Couldn't serve file, ERROR = %s" % error).to_ascii_buffer()
 	else:
+		if seek != -1 and seek < file.get_length():
+			file.seek(seek)
 		content = file.get_buffer(file.get_length())
 	file.close()
 	return content
