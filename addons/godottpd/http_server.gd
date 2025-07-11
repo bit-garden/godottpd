@@ -72,7 +72,7 @@ func _print_debug(message: String) -> void:
 ## [br][param path] - The path the router will handle.
 ## Supports a regular expression and the group matches will be available in HttpRequest.query_match.
 ## [br][param router] - The router which will handle the request
-func register_router(path: String, router: HttpRouter):
+func register_router(path: String, router: HttpRouter, condition: Callable = func(request: HttpRequest): return true):
 	var path_regex = RegEx.new()
 	var params: Array = []
 	if path.left(0) == "^":
@@ -84,7 +84,8 @@ func register_router(path: String, router: HttpRouter):
 	_routers.push_back({
 		"path": path_regex,
 		"params": params,
-		"router": router
+		"router": router,
+		"condition": condition,
 	})
 
 
@@ -207,6 +208,8 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 	response.access_control_allowed_headers = _access_control_allowed_headers
 
 	for router in self._routers:
+		if not router.condition.bind(request).call(): break
+		
 		var matches = router.path.search(request.path)
 		if matches:
 			request.query_match = matches

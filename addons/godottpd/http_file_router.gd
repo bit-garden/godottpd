@@ -20,9 +20,6 @@ var extensions: PackedStringArray = ["html"]
 ## A list of extensions that will be excluded if requested
 var exclude_extensions: PackedStringArray = []
 
-## Condition function to return true to get access to this folder
-var condition: Callable = func(): return true
-
 var weekdays: Array[String] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 var monthnames: Array[String] = ['___', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -40,7 +37,6 @@ func _init(
 		'fallback_page': fallback_page,
 		'extensions': extensions,
 		'exclude_extensions': exclude_extensions,
-		'condition': condition,
 	}
 	) -> void:
 	self.path = path
@@ -48,17 +44,12 @@ func _init(
 	self.fallback_page = options.get("fallback_page", self.fallback_page)
 	self.extensions = options.get("extensions", self.extensions)
 	self.exclude_extensions = options.get("exclude_extensions", self.exclude_extensions)
-	self.condition = options.get("condition", self.condition)
 
 ## Handle a GET request
 ## [br]
 ## [br][param request] - The request from the client
 ## [br][param response] - The response to send to the clinet
 func handle_get(request: HttpRequest, response: HttpResponse) -> void:
-	if not self.condition.call():
-		response.send_raw(404)
-		return
-	
 	var serving_path: String = path + request.path
 	var file_exists: bool = _file_exists(serving_path)
 	
