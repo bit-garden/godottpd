@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> I am taking over as new maintainer as of 7/7/2025. Please see https://github.com/deep-entertainment/issues/issues/56 for details.
+> I am now maintainer as of 7/7/2025. Please see https://github.com/deep-entertainment/issues/issues/56 for details.
 
 # GodotTPD
 
@@ -19,6 +19,7 @@ class_name MyExampleRouter
 func handle_get(request, response):
 	response.send(200, "Hello!")
 
+# same for handle_post, handle_delete and so on
 ```
 
 This router would respond to a GET [request](HttpRequest.md) on its path and send back a [response](HttpResponse.md) with a 200 status code and the body "Hello!".
@@ -31,6 +32,19 @@ server.register_router("/", MyExampleRouter.new())
 add_child(server)
 server.start()
 ```
+
+You can additionally add functions to the `register_router` call to conditionally allow access based on the request.
+
+```gdscript
+func isAdmin(request: HttpRequest)
+	# something something
+
+server.register_router("/", MyExampleRouter.new(), func(request): return isAdmin(request))
+```
+
+## Current main issues
+Static file delivery loads the whole file, then delivers to the client. This has obvious RAM implications leading to DDOS issues.
+TLS/SSL is not handled by the server currently. Using services like CloudFlare's tunnel services can supply the TLS/SSL protection, but this isn't ideal.
 
 ## Documentation
 
