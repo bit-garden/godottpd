@@ -62,7 +62,7 @@ func send_partial(status_code: int, data: PackedByteArray = PackedByteArray([]),
 ## [br][param data] - The body to send
 ## [br][param content_type] - The type of the content to send
 func send(status_code: int, data: String = "", content_type = "text/html") -> void:
-	send_raw(status_code, data.to_ascii_buffer(), content_type)
+	send_raw(status_code, data.to_utf8_buffer(), content_type)
 
 ## Send out a JSON response to the client
 ## [br] This function will internally call the [method send]
