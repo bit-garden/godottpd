@@ -20,6 +20,9 @@ var extensions: PackedStringArray = ["html"]
 ## A list of extensions that will be excluded if requested
 var exclude_extensions: PackedStringArray = []
 
+## List files in a directory if index.html is not found
+var listfiles: bool = false
+
 var weekdays: Array[String] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 var monthnames: Array[String] = ['___', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -37,6 +40,7 @@ func _init(
 		'fallback_page': fallback_page,
 		'extensions': extensions,
 		'exclude_extensions': exclude_extensions,
+		'listfiles': listfiles,
 	}
 	) -> void:
 	self.path = path
@@ -44,13 +48,15 @@ func _init(
 	self.fallback_page = options.get("fallback_page", self.fallback_page)
 	self.extensions = options.get("extensions", self.extensions)
 	self.exclude_extensions = options.get("exclude_extensions", self.exclude_extensions)
+	self.listfiles = options.get('listfiles', self.listfiles)
 
 ## Handle a GET request
 ## [br]
 ## [br][param request] - The request from the client
 ## [br][param response] - The response to send to the clinet
 func handle_get(request: HttpRequest, response: HttpResponse) -> void:
-	var serving_path: String = path + request.path
+	var serving_path: String = (path + request.path).uri_decode()
+	var serving_dir = serving_path
 	var file_exists: bool = _file_exists(serving_path)
 	
 	if request.path == "/" and not file_exists:
@@ -97,6 +103,19 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 					_get_mime(serving_path.get_extension()),
 					"Cache-Control: no-cache\r\nLast-Modified: %s\r\n" % timestamp
 				)
+	elif self.listfiles and serving_dir.ends_with('/') and DirAccess.dir_exists_absolute(serving_dir):
+		var dir = DirAccess.open(serving_dir)
+		var dirs := dir.get_directories()
+		var files := dir.get_files()
+		var out := ''
+		for f in dirs:
+			if not f.contains('/.'):
+				out += '<a href="%s/">%s/</a><br>' % [f.uri_encode(), f]
+		for f in files:
+			if not f.contains('/.'):
+				out += '<a href="%s">%s</a><br>' % [f.uri_encode(), f]
+		response.send(200, out)
+		print('list dir')
 	else:
 		if fallback_page.length() > 0:
 			serving_path = path + "/" + fallback_page
