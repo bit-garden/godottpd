@@ -54,9 +54,11 @@ var _access_control_allowed_headers = "content-type"
 # Compile the required regex
 func _init(_logging: bool = false):
 	self._logging = _logging
-	set_process(false)
 	_method_regex.compile("^(?<method>GET|POST|HEAD|PUT|PATCH|DELETE|OPTIONS) (?<path>[^ ]+) HTTP/1.1$")
 	_header_regex.compile("^(?<key>[\\w-]+): (?<value>(.*))$")
+
+func _ready() -> void:
+	set_process(false)
 
 # Print a debug message in console, if the debug mode is enabled
 #
@@ -91,19 +93,18 @@ func register_router(path: String, router: HttpRouter, condition: Callable = fun
 
 ## Handle possibly incoming requests
 func _process(_delta: float) -> void:
-	if _server:
-		while _server.is_connection_available():
-			var new_client = _server.take_connection()
-			if new_client:
-				self._clients.append(new_client)
-		for client in self._clients:
-			client.poll()
-			if client.get_status() == StreamPeerTCP.STATUS_CONNECTED:
-				var bytes = client.get_available_bytes()
-				if bytes > 0:
-					var request_string = client.get_utf8_string(bytes)
-					self._handle_request(client, request_string)
-		_remove_disconnected_clients()
+	while _server.is_connection_available():
+		var new_client = _server.take_connection()
+		if new_client:
+			self._clients.append(new_client)
+	for client in self._clients:
+		client.poll()
+		if client.get_status() == StreamPeerTCP.STATUS_CONNECTED:
+			var bytes = client.get_available_bytes()
+			if bytes > 0:
+				var request_string = client.get_utf8_string(bytes)
+				self._handle_request(client, request_string)
+	_remove_disconnected_clients()
 
 
 func _remove_disconnected_clients():
@@ -115,8 +116,8 @@ func _remove_disconnected_clients():
 
 ## Start the server
 func start():
-	set_process(true)
 	self._server = TCPServer.new()
+	set_process(true)
 	var err: int = self._server.listen(self.port, self.bind_address)
 	match err:
 		22:
