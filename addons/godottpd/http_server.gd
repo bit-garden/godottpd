@@ -31,7 +31,7 @@ var _server: TCPServer
 var _clients: Array
 
 # A list of HttpRequest routers who could handle a request
-var _routers: Array = []
+var _routers: Array[HttpRouter] = []
 
 # A regex identifiying the method line
 var _method_regex: RegEx = RegEx.new()
@@ -74,21 +74,25 @@ func _print_debug(message: String) -> void:
 ## [br][param path] - The path the router will handle.
 ## Supports a regular expression and the group matches will be available in HttpRequest.query_match.
 ## [br][param router] - The router which will handle the request
-func register_router(path: String, router: HttpRouter, condition: Callable = func(request: HttpRequest): return true):
+#func register_router(path: String, router: HttpRouter, condition: Callable = func(request: HttpRequest): return true):
+func register_router(router: HttpRouter) -> void:
 	var path_regex = RegEx.new()
-	var params: Array = []
-	if path.left(0) == "^":
-		path_regex.compile(path)
+	var params: Array[String] = []
+	if router.path.left(0) == "^":
+		path_regex.compile(router.path)
 	else:
-		var regexp: Array = _path_to_regexp(path, router is HttpFileRouter)
+		var regexp: Array = _path_to_regexp(router.path, router is HttpFileRouter)
 		path_regex.compile(regexp[0])
 		params = regexp[1]
-	_routers.push_back({
-		"path": path_regex,
-		"params": params,
-		"router": router,
-		"condition": condition,
-	})
+	router.rpath = path_regex
+	router.params = params
+	_routers.push_back(router)
+	#_routers.push_back({
+		#"path": path_regex,
+		#"params": params,
+		#"router": router,
+		#"condition": condition,
+	#})
 
 
 ## Handle possibly incoming requests
@@ -188,6 +192,7 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 	var response = HttpResponse.new()
 	var fetch_mode = ""
 	var origin = ""
+	var requestpath = request.path
 	response.client = client
 	response.server_identifier = server_identifier
 
@@ -209,9 +214,12 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 	response.access_control_allowed_headers = _access_control_allowed_headers
 
 	for router in self._routers:
+		request.path = requestpath
+		request.parameters.clear()
+		
 		if not router.condition.bind(request).call(): break
 		
-		var matches = router.path.search(request.path)
+		var matches = router.rpath.search(request.path)
 		if matches:
 			request.query_match = matches
 			if request.query_match.get_string("subpath"):
@@ -221,35 +229,27 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 					request.parameters[parameter] = request.query_match.get_string(parameter)
 			match request.method:
 				"GET":
-					found = true
-					router.router.handle_get(request, response)
+					found = router.handle_get.call(request, response)
 				"POST":
-					found = true
-					router.router.handle_post(request, response)
+					found = router.handle_post.call(request, response)
 				"HEAD":
-					found = true
-					router.router.handle_head(request, response)
+					found = router.handle_head.call(request, response)
 				"PUT":
-					found = true
-					router.router.handle_put(request, response)
+					found = router.handle_put.call(request, response)
 				"PATCH":
-					found = true
-					router.router.handle_patch(request, response)
+					found = router.handle_patch.call(request, response)
 				"DELETE":
-					found = true
-					router.router.handle_delete(request, response)
+					found = router.handle_delete.call(request, response)
 				"OPTIONS":
 					if _allowed_origins.size() > 0 && fetch_mode == "cors":
 						if is_allowed_origin:
 							response.send(204)
 						else:
 							response.send(400, "%s is not present in the allowed origins" % origin)
-
 						return
 
-					found = true
-					router.router.handle_options(request, response)
-			break
+					found = router.router.handle_options(request, response)
+			#break
 	if not found:
 		response.send(404, "Not found")
 
@@ -268,7 +268,7 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 # 			ex. "/user/:id" --> "^/user/(?<id>([^/#?]+?))[/#?]?$"
 func _path_to_regexp(path: String, should_match_subfolders: bool = false) -> Array:
 	var regexp: String = "^"
-	var params: Array = []
+	var params: Array[String] = []
 	var fragments: Array = path.split("/")
 	fragments.pop_front()
 	for fragment in fragments:
@@ -278,7 +278,7 @@ func _path_to_regexp(path: String, should_match_subfolders: bool = false) -> Arr
 			params.append(fragment)
 		else:
 			regexp += "/" + fragment
-	regexp += "[/#?]?$" if not should_match_subfolders else "(?<subpath>$|/.*)"
+	regexp += "[/#?]?$" if not should_match_subfolders else "*(?<subpath>$|/.*)"
 	return [regexp, params]
 
 
