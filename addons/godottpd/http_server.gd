@@ -217,8 +217,6 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 		request.path = requestpath
 		request.parameters.clear()
 		
-		if not router.condition.bind(request).call(): break
-		
 		var matches = router.rpath.search(request.path)
 		if matches:
 			request.query_match = matches
@@ -227,6 +225,7 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 			if router.params.size() > 0:
 				for parameter in router.params:
 					request.parameters[parameter] = request.query_match.get_string(parameter)
+			if not router.condition.bind(request).call(): continue
 			match request.method:
 				"GET":
 					found = router.handle_get.call(request, response)
