@@ -41,6 +41,7 @@ func _init(
 		'extensions': extensions,
 		'exclude_extensions': exclude_extensions,
 		'listfiles': listfiles,
+		'condition': condition,
 	}
 	) -> void:
 	self.index_page = options.get("index_page", self.index_page)
@@ -49,7 +50,7 @@ func _init(
 	self.exclude_extensions = options.get("exclude_extensions", self.exclude_extensions)
 	self.listfiles = options.get('listfiles', self.listfiles)
 	self.localpath = localpath
-	super(path, {'get': _handle_get})
+	super(path, {'get': _handle_get, 'condition': options.get('condition', self.condition)})
 
 ## Handle a GET request
 ## [br]
