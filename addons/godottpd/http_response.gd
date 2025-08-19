@@ -94,7 +94,7 @@ func cookie(name: String, value: String, options: Dictionary = {}) -> void:
 	if options.has("expires"): cookie+="; Expires="+options["expires"]
 	if options.has("path"): cookie+="; Path="+options["path"]
 	if options.has("secure"): cookie+="; Secure="+options["secure"]
-	if options.has("httpOnly"): cookie+="; HttpOnly="+options["httpOnly"]
+	#if options.has("httpOnly"): cookie+="; HttpOnly="+options["httpOnly"]
 	if options.has("sameSite"):
 		match (options["sameSite"]):
 			true: cookie += "; SameSite=Strict"
@@ -102,6 +102,7 @@ func cookie(name: String, value: String, options: Dictionary = {}) -> void:
 			"strict": cookie += "; SameSite=Strict"
 			"none": cookie += "; SameSite=None"
 			_: pass
+	cookie += "; HttpOnly"
 	cookies.append(cookie)
 
 

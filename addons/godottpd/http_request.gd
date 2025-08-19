@@ -51,3 +51,13 @@ func get_body_parsed() -> Variant:
 ## Override `str()` method, automatically called in `print()` function
 func _to_string() -> String:
 	return JSON.stringify({headers=headers, method=method, path=path})
+
+
+## Get cookies as dictionary
+func get_cookies() -> Dictionary[String, String]:
+	if 'Cookie' not in headers: return {}
+	var cookies: Dictionary[String, String] = {}
+	for cookie in headers.Cookie.split(';'):
+		var pair: PackedStringArray = cookie.split('=')
+		cookies[pair[0].strip_edges()] = pair[1].strip_edges()
+	return cookies
