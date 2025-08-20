@@ -39,7 +39,7 @@ func get_body_parsed() -> Variant:
 	if(content_type == "application/x-www-form-urlencoded"):
 		var data = {}
 
-		for body_part in  body.split("&"):
+		for body_part in body.split("&"):
 			var key_and_value = body_part.split("=")
 			data[key_and_value[0]] = key_and_value[1]
 
@@ -55,7 +55,9 @@ func _to_string() -> String:
 
 ## Get cookies as dictionary
 func get_cookies() -> Dictionary[String, String]:
-	if 'Cookie' not in headers: return {}
+	var cookie_string: String = headers.get('Cookie', headers.get('cookie', ''))
+	
+	if cookie_string == '': return {}
 	var cookies: Dictionary[String, String] = {}
 	for cookie in headers.Cookie.split(';'):
 		var pair: PackedStringArray = cookie.split('=')
