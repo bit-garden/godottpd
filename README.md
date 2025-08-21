@@ -2,7 +2,9 @@
 
 A routeable HTTP server for Godot.
 
-This addon for the [Godot engine](https://godotengine.com) includes classes to start an HTTP server which can handle requests to paths using a set of routers in the way [ExpressJS](https://expressjs.com/) works.
+This allows composable http servers to be built and configured. The idea is wherever Godot or it's editor can be ran, a server can be hosted. This would allow headless devices as well as normal desktops, androids and ios(ipads and iphons) to be able to host a server. Building it this way also allows UI to be easily tacked on as Godot has this baked in.
+
+This project was inherited from dploeger. It was originally marketed as an ExpressJS like framework, but since my changes, I'm not sure this is true anymore.
 
 ## Example
 
@@ -50,5 +52,5 @@ Each method handler should return true if they are capturing the request. Return
 
 ## Current main issues
 Static file delivery loads the whole file, then delivers to the client. This has obvious RAM implications leading to DDOS issues.
-TLS/SSL is not handled by the server currently. Using services like CloudFlare's tunnel services can supply the TLS/SSL protection, but this isn't ideal.
 
+TLS/SSL is not handled by the server currently. 
