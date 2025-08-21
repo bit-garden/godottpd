@@ -48,6 +48,9 @@ var _access_control_allowed_methods = "POST, GET, OPTIONS"
 # Comma separed headers for the access control
 var _access_control_allowed_headers = "content-type"
 
+# Cause reasons?
+var _threads: Array[Thread] = []
+
 # Compile the required regex
 func _init(_logging: bool = false):
 	self._logging = _logging
@@ -113,6 +116,10 @@ func _remove_disconnected_clients():
 	self._clients = self._clients.filter(
 		func(c: StreamPeerTCP): return valid_statuses.has(c.get_status())
 	)
+	for t in range(_threads.size() - 1, -1, -1):
+		if !_threads[t].is_alive() and _threads[t].is_started():
+			_threads[t].wait_to_finish()
+			_threads.remove_at(t)
 
 
 ## Start the server
@@ -180,6 +187,7 @@ func _handle_request(client: StreamPeer, request_string: String):
 #   - body: The raw body of the request
 func _perform_current_request(client: StreamPeer, request: HttpRequest):
 	var thread = Thread.new()
+	_threads.push_back(thread)
 	thread.start(__perform_current_request.bind(client, request))
 
 func __perform_current_request(client: StreamPeer, request: HttpRequest):
@@ -249,6 +257,8 @@ func __perform_current_request(client: StreamPeer, request: HttpRequest):
 	if not found:
 		response.send(404, "Not found")
 
+func uhh():
+	pass
 
 # Converts a URL path to @regexp RegExp, providing a mechanism to fetch groups from the expression
 # indexing each parameter by name in the @params array

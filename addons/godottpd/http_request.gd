@@ -59,7 +59,7 @@ func get_cookies() -> Dictionary[String, String]:
 	
 	if cookie_string == '': return {}
 	var cookies: Dictionary[String, String] = {}
-	for cookie:String in headers.Cookie.split(';'):
+	for cookie: String in headers.Cookie.split(';'):
 		var pair: PackedStringArray = cookie.split('=', true, 1)
 		cookies[pair[0].strip_edges()] = pair[1].strip_edges()
 	return cookies
