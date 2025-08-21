@@ -75,7 +75,8 @@ func _handle_get(request: HttpRequest, response: HttpResponse) -> bool:
 
 	# GDScript must be excluded, unless it is used as a preprocessor (php-like)
 	if (file_exists and not serving_path.get_extension() in ["gd"] + Array(exclude_extensions)):
-		var modifiedtime = FileAccess.get_modified_time(serving_path)
+		var modifiedtime = FileAccess.get_modified_time(localpath + serving_path)
+		var filesize = FileAccess.get_size(localpath + serving_path)
 		var time = Time.get_datetime_dict_from_unix_time(modifiedtime)
 		var weekday = weekdays[time.weekday]
 		var monthname = monthnames[time.month]
@@ -97,14 +98,14 @@ func _handle_get(request: HttpRequest, response: HttpResponse) -> bool:
 						206,
 						_serve_file(serving_path, start),
 						_get_mime(serving_path.get_extension()),
-						"Cache-Control: no-cache\r\nLast-Modified: %s\r\nContent-Range: bytes %s-%s/%s\n\r" % [timestamp, start, size-1, size]
+						"Cache-Control: no-cache\r\nLast-Modified: %s\r\nContent-Range: bytes %s-%s/%s\n\rContent-Length: %s\r\n" % [timestamp, start, size-1, size, filesize]
 					)
 			else:
 				response.send_raw(
 					200,
 					_serve_file(serving_path),
 					_get_mime(serving_path.get_extension()),
-					"Cache-Control: no-cache\r\nLast-Modified: %s\r\n" % timestamp
+					"Cache-Control: no-cache\r\nLast-Modified: %s\r\nContent-Length: %s\r\n" % [timestamp, filesize]
 				)
 			return true
 	elif self.listfiles and serving_dir.ends_with('/') and DirAccess.dir_exists_absolute(localpath + serving_dir):

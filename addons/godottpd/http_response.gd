@@ -39,7 +39,10 @@ func send_raw(status_code: int, data: PackedByteArray = PackedByteArray([]), con
 		client.put_data(("%s: %s\r\n" % [header, headers[header]]).to_ascii_buffer())
 	for cookie in cookies:
 		client.put_data(("Set-Cookie: %s\r\n" % cookie).to_ascii_buffer())
-	client.put_data(("Content-Length: %d\r\n" % data.size()).to_ascii_buffer())
+	# if content length is manually set by sender, skip automatic one.
+	# this will allow piecemeal loading and sending of larger files to prevent DOS 
+	if 'Content-Length: ' not in extra_header:
+		client.put_data(("Content-Length: %d\r\n" % data.size()).to_ascii_buffer())
 	client.put_data("Connection: close\r\n".to_ascii_buffer())
 	client.put_data(("Access-Control-Allow-Origin: %s\r\n" % access_control_origin).to_ascii_buffer())
 	client.put_data(("Access-Control-Allow-Methods: %s\r\n" % access_control_allowed_methods).to_ascii_buffer())
