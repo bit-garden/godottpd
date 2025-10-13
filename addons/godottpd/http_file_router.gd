@@ -76,7 +76,7 @@ func _handle_get(request: HttpRequest, response: HttpResponse) -> bool:
 	# GDScript must be excluded, unless it is used as a preprocessor (php-like)
 	if (file_exists and not serving_path.get_extension() in ["gd"] + Array(exclude_extensions)):
 		var modifiedtime = FileAccess.get_modified_time(localpath + serving_path)
-		var filesize = FileAccess.get_size(localpath + serving_path)
+		var filesize = FileAccess.open(localpath + serving_path, FileAccess.READ).get_length()
 		var time = Time.get_datetime_dict_from_unix_time(modifiedtime)
 		var weekday = weekdays[time.weekday]
 		var monthname = monthnames[time.month]
